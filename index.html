@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spark AI Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #020024, #090979, #00d4ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .chat-box {
+      width: 100%;
+      max-width: 420px;
+      height: 90vh;
+      background: white;
+      border-radius: 15px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+
+  header {
+  background: #020024;
+  color: white;
+  padding: 12px;
+  font-weight: bold;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.founder {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+
+    #messages {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      background: #f1f5f9;
+    }
+
+    .msg {
+      margin: 8px 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 80%;
+    }
+
+    .user {
+      background: #2563eb;
+      color: white;
+      margin-left: auto;
+    }
+
+    .bot {
+      background: #e5e7eb;
+    }
+
+    footer {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      outline: none;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0 20px;
+      cursor: pointer;
+    }
+.top-bar {
+  background: #020024;
+  color: white;
+  padding: 12px 15px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.status {
+  font-size: 11px;
+  color: #00ff99;
+}
+
+.founder {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.footer-brand {
+  text-align: center;
+  font-size: 11px;
+  color: #555;
+  padding: 5px;
+  background: #f8fafc;
+}
+#login-box {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+
+#login-box input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+}
+
+#login-box button {
+  width: 100%;
+  padding: 10px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#error {
+  color: red;
+  font-size: 12px;
+}
+
+  </style>
+</head>
+
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-box">
+
+  <h2>🔐 Spark AI Login</h2>
+
+  <input id="username" placeholder="Username" />
+  <input id="password" type="password" placeholder="Password" />
+
+  <button onclick="login()">Login</button>
+
+  <p id="error"></p>
+
+</div>
+
+
+<!-- CHAT APP -->
+<div class="chat-box" id="chatApp" style="display:none;">
+
+  <header class="top-bar">
+    <div class="brand">
+      ⚡ Spark AI
+      <div class="status">● Online</div>
+    </div>
+
+    <div class="founder">
+      Founder: Pranavaraj
+    </div>
+  </header>
+
+  <div id="messages"></div>
+
+  <footer>
+    <input id="input" placeholder="Type here..." />
+    <button onclick="send()">Send</button>
+  </footer>
+
+  <div class="footer-brand">
+    © 2026 Spark AI • Powered by Pranavaraj
+  </div>
+
+</div>
+
+
+<script>
+
+const USER = "admin";
+const PASS = "Pranavam21@"; // 👈 CHANGE THIS LATER
+
+function login(){
+
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+
+  if(u === USER && p === PASS){
+
+    document.getElementById("login-box").style.display = "none";
+    document.getElementById("chatApp").style.display = "flex";
+
+  } else {
+
+    document.getElementById("error").innerText = "❌ Wrong Login";
+
+  }
+}
+
+
+
+// CHAT SYSTEM
+
+const messages = document.getElementById("messages");
+const input = document.getElementById("input");
+
+function add(text, type){
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  div.innerText = text;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+async function send(){
+
+  const text = input.value.trim();
+  if(!text) return;
+
+  add(text,"user");
+  input.value="";
+
+  add("Typing...","bot");
+
+  const res = await fetch("/chat",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({message:text})
+  });
+
+  const data = await res.json();
+
+  messages.lastChild.remove();
+
+  add(data.reply,"bot");
+}
+
+add("Hello! I am Spark AI 🤖","bot");
+
+</script>
+
+</body>
+</html>
