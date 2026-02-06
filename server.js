@@ -7,7 +7,8 @@ const app = express();
 const PORT = 3000;
 
 // 🔑 PASTE YOUR GROQ API KEY HERE
-const GROQ_API_KEY = "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";
+const GROQ_API_KEY = process.env.GROQ_KEY
+ ;
 
 const groq = new Groq({
   apiKey: GROQ_API_KEY
@@ -51,3 +52,4 @@ app.post("/chat", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Spark AI running at http://localhost:${PORT}`);
 });
+
