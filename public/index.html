@@ -245,7 +245,7 @@ function add(text,type){
   save(text,type);
 }
 
-async function send(){
+async function sendMessage(){
   const text=input.value.trim();
   if(!text) return;
 
@@ -268,8 +268,13 @@ async function send(){
   }
 }
 
-send.onclick=send;
-input.onkeydown=e=>{ if(e.key==="Enter") send(); };
+const sendBtn = document.getElementById("send");
+
+sendBtn.onclick = sendMessage;
+
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") sendMessage();
+});
 
 /* =============== VOICE =============== */
 
