@@ -1,6 +1,9 @@
 // server.js
 import dotenv from "dotenv";
 dotenv.config();
+console.log("GROQ_KEY exists:", !!process.env.GROQ_KEY);
+console.log("GROQ_KEY length:", process.env.GROQ_KEY?.length);
+
 
 import express from "express";
 import cors from "cors";
@@ -81,3 +84,4 @@ app.post("/chat", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Spark AI running on port ${PORT}`);
 });
+
