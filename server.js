@@ -10,19 +10,19 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 // --------------------
-// Setup paths
+// Path setup (IMPORTANT for Render)
 // --------------------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --------------------
-// Initialize app
+// App init
 // --------------------
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --------------------
-// Groq API key
+// Groq client
 // --------------------
 const groq = new Groq({
   apiKey: process.env.GROQ_KEY
@@ -34,21 +34,8 @@ const groq = new Groq({
 app.use(cors());
 app.use(bodyParser.json());
 
-// Optional password protection
-const PASSWORD = process.env.APP_PASSWORD; // set in Render Env Variables
-app.use((req, res, next) => {
-  if (PASSWORD) {
-    const auth = req.headers.authorization || "";
-    const token = auth.replace("Bearer ", "");
-    if (token !== PASSWORD) {
-      return res.status(401).send("Unauthorized: Invalid password");
-    }
-  }
-  next();
-});
-
 // --------------------
-// Serve frontend
+// Serve frontend (PUBLIC FIRST)
 // --------------------
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -57,25 +44,48 @@ app.get("/", (req, res) => {
 });
 
 // --------------------
+// Chat password protection (ONLY for /chat)
+// --------------------
+const PASSWORD = process.env.APP_PASSWORD; // optional
+
+const protectChat = (req, res, next) => {
+  if (!PASSWORD) return next();
+
+  const auth = req.headers.authorization || "";
+  const token = auth.replace("Bearer ", "");
+
+  if (token !== PASSWORD) {
+    return res.status(401).json({ reply: "🔒 Invalid password" });
+  }
+  next();
+};
+
+// --------------------
 // Chat API
 // --------------------
-app.post("/chat", async (req, res) => {
+app.post("/chat", protectChat, async (req, res) => {
   try {
     const userMsg = req.body.message;
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: "llama-3.1-8b-instant", // excellent for math & physics
       messages: [
-        { role: "system", content: "You are Spark AI, expert in Math and Physics. Explain clearly." },
-        { role: "user", content: userMsg }
-      ],
+        {
+          role: "system",
+          content: "You are Spark AI, expert in Math and Physics. Explain clearly step by step."
+        },
+        {
+          role: "user",
+          content: userMsg
+        }
+      ]
     });
 
     const reply = completion.choices[0].message.content;
     res.json({ reply });
 
   } catch (err) {
-    console.error(err);
+    console.error("Chat error:", err);
     res.status(500).json({ reply: "❌ AI Error" });
   }
 });
@@ -84,5 +94,5 @@ app.post("/chat", async (req, res) => {
 // Start server
 // --------------------
 app.listen(PORT, () => {
-  console.log(`✅ Spark AI running at http://localhost:${PORT}`);
+  console.log(`✅ Spark AI running on port ${PORT}`);
 });
