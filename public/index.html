@@ -204,6 +204,8 @@ footer button{
 
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
+let CURRENT_USER = "";
+
 
 /* =============== LOGIN =============== */
 
@@ -218,6 +220,14 @@ loginBtn.onclick=()=>{
     load();
   }else{
     error.innerText="❌ Wrong Login";
+loginBtn.onclick = () => {
+  if (user.value === USER && pass.value === PASS) {
+    CURRENT_USER = user.value;   // 👈 ADD THIS
+    login.style.display = "none";
+    app.style.display = "flex";
+    load();                      // load chat history
+  } else {
+    error.innerText = "❌ Wrong Login";
   }
 };
 
@@ -250,6 +260,8 @@ function add(text,type){
 
 async function sendMessage(){
   const text=input.value.trim();
+async function send(){
+  const text = input.value.trim();
   if(!text) return;
 
   add(text,"user");
@@ -261,11 +273,22 @@ async function sendMessage(){
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({message:text})
+    const r = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user: CURRENT_USER,   // 👈 SEND USERNAME
+        message: text
+      })
     });
     const d=await r.json();
+
+    const d = await r.json();
     messages.lastChild.remove();
     add(d.reply,"bot");
   }catch{
+
+  } catch {
     messages.lastChild.remove();
     add("❌ Server error","bot");
   }
@@ -312,6 +335,13 @@ function save(t,t2){
 function load(){
   const h=JSON.parse(localStorage.getItem("spark")||"[]");
   h.forEach(m=>add(m.t,m.t2));
+async function load(){
+  const r = await fetch(`/history/${CURRENT_USER}`);
+  const h = await r.json();
+  messages.innerHTML = "";
+  h.forEach(m => {
+    add(m.content, m.role === "assistant" ? "bot" : "user");
+  });
 }
 
 /* =============== CLEAR =============== */
@@ -329,7 +359,6 @@ add("Hello! I am Spark AI ⚡","bot");
 
 });
 </script>
-
   <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
