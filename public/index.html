@@ -1,334 +1,354 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00054c">
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spark AI</title>
 
 <style>
+/* ================= THEME ================= */
+
 :root{
-  --bg:#00054c;
-  --card:#020617;
-  --text:#ffffff;
-  --user:#2563eb;
-  --bot:#1e293b;
+--bg:#00054c;          /* Spark logo background */
+--card:#020617;
+--text:#ffffff;
+--user:#2563eb;
+--bot:#1e293b;
 }
 
 body{
-  margin:0;
-  font-family:Arial;
-  background:var(--bg);
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
+background:var(--bg);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+color:var(--text);
 }
 
-/* LOGIN */
+/* ================= LOGIN ================= */
+
 #login{
-  background:var(--card);
-  padding:30px;
-  border-radius:15px;
-  width:300px;
-  text-align:center;
+background:var(--card);
+padding:30px;
+width:320px;
+border-radius:15px;
+text-align:center;
+box-shadow:0 0 25px rgba(0,0,0,.5);
 }
-#login input, #login button{
-  width:100%;
-  margin:8px 0;
-  padding:10px;
-  border-radius:8px;
-  border:none;
+
+#login h2{
+margin-bottom:20px;
 }
+
+#login input{
+width:100%;
+padding:10px;
+margin:8px 0;
+border-radius:8px;
+border:none;
+outline:none;
+}
+
 #login button{
-  background:#2563eb;
-  color:white;
-  cursor:pointer;
+width:100%;
+padding:10px;
+background:#2563eb;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-size:16px;
 }
 
-/* APP */
+#error{
+color:#ff6b6b;
+font-size:12px;
+margin-top:8px;
+}
+
+/* ================= APP ================= */
+
 #app{
-  display:none;
-  width:100%;
-  height:100vh;
-  background:white;
+display:none;           /* hidden by default */
+width:95%;
+max-width:700px;
+height:95vh;
+background:var(--text);
+border-radius:18px;
+overflow:hidden;
+flex-direction:column;  /* flex ONLY when shown */
+box-shadow:0 0 25px rgba(0,0,0,.6);
 }
 
-/* LAYOUT */
-#layout{
-  display:flex;
-  height:100%;
-}
-
-/* SIDEBAR */
-#sidebar{
-  width:220px;
-  background:#020617;
-  color:white;
-  padding:10px;
-  overflow-y:auto;
-}
-#newChat{
-  width:100%;
-  padding:8px;
-  margin-bottom:10px;
-  background:#2563eb;
-  border:none;
-  border-radius:8px;
-  color:white;
-  cursor:pointer;
-}
-#history li{
-  list-style:none;
-  padding:8px;
-  margin-bottom:6px;
-  background:#1e293b;
-  border-radius:6px;
-  cursor:pointer;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-#history li span{
-  flex:1;
-}
-#history button{
-  background:none;
-  border:none;
-  color:white;
-  cursor:pointer;
-}
-
-/* CHAT */
-#chat{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-}
 header{
-  background:#00054c;
-  color:white;
-  padding:12px;
-  display:flex;
-  justify-content:space-between;
+background:linear-gradient(90deg,#00054c,#020617);
+color:white;
+padding:12px 15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+font-weight:bold;
 }
+
+header button{
+background:none;
+border:none;
+color:white;
+font-size:18px;
+cursor:pointer;
+}
+
+/* ================= CHAT ================= */
+
 #messages{
-  flex:1;
-  padding:12px;
-  overflow-y:auto;
+flex:1;
+overflow-y:auto;
+padding:12px;
 }
+
 .msg{
-  margin:8px 0;
-  padding:10px;
-  border-radius:10px;
-  max-width:70%;
+margin:10px 0;
+padding:10px 12px;
+border-radius:12px;
+max-width:75%;
+display:flex;
+align-items:center;
+gap:6px;
+line-height:1.4;
 }
+
 .user{
-  background:#2563eb;
-  color:white;
-  margin-left:auto;
+background:var(--user);
+color:white;
+margin-left:auto;
 }
+
 .bot{
-  background:#1e293b;
-  color:white;
+background:var(--bot);
 }
+
+.msg button{
+font-size:12px;
+padding:2px 6px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+/* ================= INPUT ================= */
+
 footer{
-  display:flex;
-  padding:10px;
-  gap:6px;
+display:flex;
+gap:6px;
+padding:8px;
+border-top:1px solid #1e293b;
 }
+
 footer input{
-  flex:1;
-  padding:10px;
-  border-radius:8px;
-  border:none;
+flex:1;
+padding:10px;
+border-radius:10px;
+border:none;
+outline:none;
 }
+
 footer button{
-  padding:0 16px;
-  background:#2563eb;
-  color:white;
-  border:none;
-  border-radius:8px;
+padding:0 14px;
+background:#2563eb;
+color:white;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-size:16px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
+<!-- ================= LOGIN ================= -->
+
 <div id="login">
-  <h2>⚡ Spark AI</h2>
-  <input id="user" placeholder="Username">
-  <input id="pass" type="password" placeholder="Password">
-  <button id="loginBtn">Login</button>
-  <p id="error" style="color:red"></p>
+<h2>⚡ Spark AI</h2>
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+<button id="loginBtn">Login</button>
+<p id="error"></p>
 </div>
 
-<!-- APP -->
+<!-- ================= APP ================= -->
+
 <div id="app">
-  <div id="layout">
 
-    <!-- SIDEBAR -->
-    <div id="sidebar">
-      <button id="newChat">➕ New Chat</button>
-      <ul id="history"></ul>
-    </div>
+<header>
+<div>⚡ Spark AI</div>
+<div>
+<button id="clearBtn">🗑️</button>
+</div>
+</header>
 
-    <!-- CHAT -->
-    <div id="chat">
-      <header>
-        <div>⚡ Spark AI</div>
-        <button id="clearBtn">🗑️</button>
-      </header>
+<div id="messages"></div>
 
-      <div id="messages"></div>
+<footer>
+<input id="input" placeholder="Type your message...">
+<button id="send">➤</button>
+<button id="mic">🎤</button>
+</footer>
 
-      <footer>
-        <input id="input" placeholder="Type message...">
-        <button id="send">➤</button>
-      </footer>
-    </div>
-
-  </div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
+let CURRENT_USER = "";
 
-/* LOGIN */
-const USER="admin", PASS="Pranavam21@";
-loginBtn.onclick=()=>{
-  if(user.value===USER && pass.value===PASS){
-    login.style.display="none";
-    app.style.display="block";
-    init();
-  }else error.innerText="Wrong login";
+
+/* =============== LOGIN =============== */
+
+const USER="admin";
+const PASS="Pranavam21@";
+
+loginBtn.onclick = () => {
+if (user.value === USER && pass.value === PASS) {
+CURRENT_USER = user.value;   // 👈 ADD THIS
+login.style.display = "none";
+app.style.display = "flex";
+load();                      // load chat history
+} else {
+error.innerText = "❌ Wrong Login";
+}
 };
 
-/* STORAGE */
-function key(){ return "spark_"+user.value; }
-function loadData(){
-  return JSON.parse(localStorage.getItem(key()) || '{"chats":{},"active":null}');
-}
-function saveData(d){ localStorage.setItem(key(),JSON.stringify(d)); }
+/* =============== CHAT =============== */
 
-let current=null;
+const messages=document.getElementById("messages");
+const input=document.getElementById("input");
 
-/* INIT */
-function init(){
-  const d=loadData();
-  if(!d.active) newChat();
-  else loadChat(d.active);
-  render();
-}
+function add(text,type){
+const div=document.createElement("div");
+div.className="msg "+type;
+div.innerText=text;
 
-/* NEW CHAT */
-function newChat(){
-  const d=loadData();
-  const id="chat_"+Date.now();
-  d.chats[id]={ title:"New Chat", messages:[] };
-  d.active=id;
-  saveData(d);
-  current=id;
-  messages.innerHTML="";
-  render();
-}
-newChatBtn=newChat;
-newChat.onclick=newChat;
+if(type==="bot"){
+const speak=document.createElement("button");
+speak.innerText="🔊";
+speak.onclick=()=>tts(text);
 
-/* RENDER SIDEBAR */
-function render(){
-  history.innerHTML="";
-  const d=loadData();
-  Object.keys(d.chats).forEach(id=>{
-    const li=document.createElement("li");
-    const span=document.createElement("span");
-    span.innerText=d.chats[id].title;
-    span.onclick=()=>loadChat(id);
+const copy=document.createElement("button");
+copy.innerText="📋";
+copy.onclick=()=>navigator.clipboard.writeText(text);
 
-    const edit=document.createElement("button");
-    edit.innerText="✏️";
-    edit.onclick=()=>{
-      const t=prompt("Rename chat",d.chats[id].title);
-      if(t){ d.chats[id].title=t; saveData(d); render(); }
-    };
-
-    const del=document.createElement("button");
-    del.innerText="🗑️";
-    del.onclick=()=>{
-      if(confirm("Delete chat?")){
-        delete d.chats[id];
-        d.active=null;
-        saveData(d);
-        newChat();
-      }
-    };
-
-    li.append(span,edit,del);
-    if(id===d.active) li.style.background="#2563eb";
-    history.appendChild(li);
-  });
+div.append(speak,copy);
 }
 
-/* LOAD CHAT */
-function loadChat(id){
-  const d=loadData();
-  current=id;
-  d.active=id;
-  saveData(d);
-  messages.innerHTML="";
-  d.chats[id].messages.forEach(m=>add(m.text,m.type,false));
+messages.appendChild(div);
+messages.scrollTop=messages.scrollHeight;
+save(text,type);
 }
 
-/* ADD MESSAGE */
-function add(text,type,save=true){
-  const div=document.createElement("div");
-  div.className="msg "+type;
-  div.innerText=text;
-  messages.appendChild(div);
-  messages.scrollTop=messages.scrollHeight;
+async function send(){
+async function sendMessage(){
+const text = input.value.trim();
+if(!text) return;
 
-  if(save){
-    const d=loadData();
-    d.chats[current].messages.push({text,type});
-    if(type==="user" && d.chats[current].messages.length===1)
-      d.chats[current].title=text.slice(0,20);
-    saveData(d);
-    render();
-  }
+add(text,"user");
+input.value="";
+add("Typing...","bot");
+
+try{
+const r = await fetch("/chat", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({
+user: CURRENT_USER,   // 👈 SEND USERNAME
+message: text
+})
+});
+
+const d = await r.json();
+messages.lastChild.remove();
+add(d.reply,"bot");
+
+} catch {
+messages.lastChild.remove();
+add("❌ Server error","bot");
+}
 }
 
-/* SEND */
-async function sendMsg(){
-  const t=input.value.trim();
-  if(!t) return;
-  add(t,"user");
-  input.value="";
-  add("Typing...","bot",false);
+const sendBtn = document.getElementById("send");
 
-  try{
-    const r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:t})});
-    const d=await r.json();
-    messages.lastChild.remove();
-    add(d.reply,"bot");
-  }catch{
-    messages.lastChild.remove();
-    add("❌ Error","bot");
-  }
+sendBtn.onclick = sendMessage;
+
+input.addEventListener("keydown", e => {
+if (e.key === "Enter") sendMessage();
+});
+
+/* =============== VOICE =============== */
+
+let rec;
+try{
+rec=new (SpeechRecognition||webkitSpeechRecognition)();
+rec.lang="en-US";
+mic.onclick=()=>rec.start();
+rec.onresult=e=>{
+input.value=e.results[0][0].transcript;
+};
+}catch{
+mic.style.display="none";
 }
-send.onclick=sendMsg;
-input.onkeydown=e=>{ if(e.key==="Enter") sendMsg(); };
 
-/* CLEAR */
+/* =============== TTS =============== */
+
+function tts(text){
+speechSynthesis.cancel();
+const u=new SpeechSynthesisUtterance(text);
+speechSynthesis.speak(u);
+}
+
+/* =============== MEMORY =============== */
+
+function save(t,t2){
+const h=JSON.parse(localStorage.getItem("spark")||"[]");
+h.push({t,t2});
+localStorage.setItem("spark",JSON.stringify(h));
+}
+
+async function load(){
+const r = await fetch(`/history/${CURRENT_USER}`);
+const h = await r.json();
+messages.innerHTML = "";
+h.forEach(m => {
+add(m.content, m.role === "assistant" ? "bot" : "user");
+});
+}
+
+/* =============== CLEAR =============== */
+
 clearBtn.onclick=()=>{
-  if(confirm("Clear chat?")){
-    const d=loadData();
-    d.chats[current].messages=[];
-    saveData(d);
-    messages.innerHTML="";
-  }
+if(confirm("Clear chat?")){
+localStorage.removeItem("spark");
+messages.innerHTML="";
+}
 };
+
+/* =============== GREET =============== */
+
+add("Hello! I am Spark AI ⚡","bot");
 
 });
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+window.addEventListener("load", () => {
+navigator.serviceWorker.register("/sw.js")
+.then(() => console.log("✅ Service Worker registered"))
+.catch(err => console.log("❌ SW failed", err));
+});
+}
 </script>
 </body>
 </html>
