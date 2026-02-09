@@ -166,6 +166,50 @@ border-radius:10px;
 cursor:pointer;
 font-size:16px;
 }
+  #layout{
+  display:flex;
+  flex:1;
+  height:100%;
+}
+
+#sidebar{
+  width:200px;
+  background:#020617;
+  color:white;
+  padding:10px;
+  overflow-y:auto;
+}
+
+#sidebar h3{
+  margin:0 0 10px;
+  font-size:14px;
+}
+
+#history{
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+
+#history li{
+  padding:8px;
+  margin-bottom:6px;
+  background:#1e293b;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:13px;
+}
+
+#history li:hover{
+  background:#334155;
+}
+
+#chat{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
 </style>
 </head>
 
@@ -185,22 +229,35 @@ font-size:16px;
 
 <div id="app">
 
-<header>
-<div>⚡ Spark AI</div>
-<div>
-<button id="clearBtn">🗑️</button>
+  <!-- TOP BAR -->
+  <header>
+    <div>⚡ Spark AI</div>
+    <button id="clearBtn">🗑️</button>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <div id="layout">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+      <h3>🕘 History</h3>
+      <ul id="history"></ul>
+    </aside>
+
+    <!-- CHAT AREA -->
+    <div id="chat">
+      <div id="messages"></div>
+
+      <footer>
+        <input id="input" placeholder="Type your message..." />
+        <button id="send">➤</button>
+        <button id="mic">🎤</button>
+      </footer>
+    </div>
+
+  </div>
 </div>
-</header>
 
-<div id="messages"></div>
-
-<footer>
-<input id="input" placeholder="Type your message...">
-<button id="send">➤</button>
-<button id="mic">🎤</button>
-</footer>
-
-</div>
 
 <script>
   let CURRENT_USER = "";
@@ -213,24 +270,23 @@ const USER="admin";
 const PASS="Pranavam21@";
 
 loginBtn.onclick=()=>{
-if(user.value===USER && pass.value===PASS){
-  CURRENT_USER = user.value;
-
-login.style.display="none";
-app.style.display="flex";
-input.focus();
-load();
-}else{
-error.innerText="❌ Wrong Login";
-}
+  if(user.value===USER && pass.value===PASS){
+    login.style.display="none";
+    app.style.display="flex";
+    loadChat();
+    renderHistory();
+  }else{
+    error.innerText="❌ Wrong Login";
+  }
 };
+
 
 /* =============== CHAT =============== */
 
 const messages=document.getElementById("messages");
 const input=document.getElementById("input");
 
-function add(text,type){
+function add(text,type,store=true){
 const div=document.createElement("div");
 div.className="msg "+type;
 div.innerText=text;
@@ -249,7 +305,7 @@ div.append(speak,copy);
 
 messages.appendChild(div);
 messages.scrollTop=messages.scrollHeight;
-save(text,type);
+if(store) savechat(text,type);
 }
 
 async function sendMessage(){
@@ -311,16 +367,36 @@ speechSynthesis.speak(u);
 
 /* =============== MEMORY =============== */
 
-function save(t,t2){
-const h=JSON.parse(localStorage.getItem("spark")||"[]");
-h.push({t,t2});
-localStorage.setItem("spark",JSON.stringify(h));
+function getUserKey(){
+  return "spark_" + user.value;
 }
 
-function load(){
-const h=JSON.parse(localStorage.getItem("spark")||"[]");
-h.forEach(m=>add(m.t,m.t2));
+function saveChat(text,type){
+  const key = getUserKey();
+  const data = JSON.parse(localStorage.getItem(key) || "[]");
+  data.push({ text, type });
+  localStorage.setItem(key, JSON.stringify(data));
+  renderHistory();
 }
+
+function loadChat(){
+  messages.innerHTML="";
+  const data = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
+  data.forEach(m => add(m.text, m.type, false));
+}
+
+function renderHistory(){
+  history.innerHTML="";
+  const data = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
+
+  if(data.length===0) return;
+
+  const li=document.createElement("li");
+  li.innerText="Current Chat";
+  li.onclick=loadChat;
+  history.appendChild(li);
+}
+
 
 /* =============== CLEAR =============== */
 
