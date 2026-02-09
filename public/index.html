@@ -166,6 +166,51 @@ footer button{
   cursor:pointer;
   font-size:16px;
 }
+#layout{
+  display:flex;
+  flex:1;
+  height:100%;
+}
+
+#sidebar{
+  width:200px;
+  background:#020617;
+  color:white;
+  padding:10px;
+  overflow-y:auto;
+}
+
+#sidebar h3{
+  margin:0 0 10px;
+  font-size:14px;
+}
+
+#history{
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+
+#history li{
+  padding:8px;
+  margin-bottom:6px;
+  background:#1e293b;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:13px;
+}
+
+#history li:hover{
+  background:#334155;
+}
+
+#chat{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+  
 </style>
 </head>
 
@@ -186,19 +231,34 @@ footer button{
 <div id="app">
 
 <header>
+  <div id="layout">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <h3>🕘 History</h3>
+    <ul id="history"></ul>
+  </aside>
+
+  <!-- CHAT AREA -->
+  <div id="chat">
+    <div id="messages"></div>
+
+    <footer>
+      <input id="input" placeholder="Type your message...">
+      <button id="send">➤</button>
+      <button id="mic">🎤</button>
+    </footer>
+  </div>
+
+</div>
+
   <div>⚡ Spark AI</div>
   <div>
     <button id="clearBtn">🗑️</button>
   </div>
 </header>
 
-<div id="messages"></div>
 
-<footer>
-  <input id="input" placeholder="Type your message...">
-  <button id="send">➤</button>
-  <button id="mic">🎤</button>
-</footer>
 
 </div>
 
