@@ -1,87 +1,90 @@
 // server.js
 import dotenv from "dotenv";
 dotenv.config();
-console.log("GROQ_KEY exists:", !!process.env.GROQ_KEY);
-console.log("GROQ_KEY length:", process.env.GROQ_KEY?.length);
-
 
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import Groq from "groq-sdk";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// --------------------
-// Fix __dirname (ESM)
-// --------------------
+// ---------------- PATHS ----------------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const CHAT_FILE = path.join(__dirname, "chats.json");
 
-// --------------------
-// App init
-// --------------------
+// ---------------- APP ----------------
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --------------------
-// Middleware
-// --------------------
+// ---------------- GROQ ----------------
+const groq = new Groq({
+  apiKey: process.env.GROQ_KEY
+});
+
+// ---------------- MIDDLEWARE ----------------
 app.use(cors());
 app.use(bodyParser.json());
-
-// --------------------
-// Serve frontend correctly
-// --------------------
 app.use(express.static(path.join(__dirname, "public")));
 
+// ---------------- LOAD CHAT FILE ----------------
+function readChats() {
+  if (!fs.existsSync(CHAT_FILE)) return {};
+  return JSON.parse(fs.readFileSync(CHAT_FILE, "utf8"));
+}
+
+function writeChats(data) {
+  fs.writeFileSync(CHAT_FILE, JSON.stringify(data, null, 2));
+}
+
+// ---------------- ROUTES ----------------
+
+// Serve app
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// --------------------
-// Groq setup
-// --------------------
-if (!process.env.GROQ_KEY) {
-  console.error("❌ GROQ_KEY is missing in environment variables");
-}
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_KEY,
+// Load history for user
+app.get("/history/:user", (req, res) => {
+  const chats = readChats();
+  res.json(chats[req.params.user] || []);
 });
 
-// --------------------
-// Chat API
-// --------------------
+// Chat endpoint
 app.post("/chat", async (req, res) => {
   try {
-    const userMsg = req.body.message;
+    const { user, message } = req.body;
+    if (!user || !message) return res.status(400).end();
 
-    if (!userMsg) {
-      return res.status(400).json({ reply: "Message is empty" });
-    }
+    const chats = readChats();
+    chats[user] = chats[user] || [];
+
+    chats[user].push({ role: "user", content: message });
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [
-        { role: "system", content: "You are Spark AI, expert in Math and Physics. Explain clearly." },
-        { role: "user", content: userMsg },
-      ],
+        { role: "system", content: "You are Spark AI, expert in Math and Physics." },
+        ...chats[user]
+      ]
     });
 
-    const reply = completion.choices[0]?.message?.content || "No reply";
+    const reply = completion.choices[0].message.content;
+
+    chats[user].push({ role: "assistant", content: reply });
+    writeChats(chats);
+
     res.json({ reply });
 
   } catch (err) {
-    console.error("Chat error:", err.message);
+    console.error("Chat error:", err);
     res.status(500).json({ reply: "❌ AI Error" });
   }
 });
 
-// --------------------
-// Start server
-// --------------------
+// ---------------- START ----------------
 app.listen(PORT, () => {
   console.log(`✅ Spark AI running on port ${PORT}`);
 });
-
