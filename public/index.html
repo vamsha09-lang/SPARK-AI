@@ -212,14 +212,6 @@ let CURRENT_USER = "";
 const USER="admin";
 const PASS="Pranavam21@";
 
-loginBtn.onclick=()=>{
-  if(user.value===USER && pass.value===PASS){
-    login.style.display="none";
-    app.style.display="flex";
-    input.focus();
-    load();
-  }else{
-    error.innerText="❌ Wrong Login";
 loginBtn.onclick = () => {
   if (user.value === USER && pass.value === PASS) {
     CURRENT_USER = user.value;   // 👈 ADD THIS
