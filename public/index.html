@@ -260,17 +260,18 @@ font-size:16px;
 
 
 <script>
-  let CURRENT_USER = "";
 
 document.addEventListener("DOMContentLoaded",()=>{
 
 /* =============== LOGIN =============== */
+let CURRENT_USER = "";
 
 const USER="admin";
 const PASS="Pranavam21@";
 
 loginBtn.onclick=()=>{
   if(user.value===USER && pass.value===PASS){
+    CURRENT_USER = user.value;
     login.style.display="none";
     app.style.display="flex";
     loadChat();
