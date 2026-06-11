@@ -9,6 +9,7 @@ import Groq from "groq-sdk";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import multer from "multer";
 
 // ---------------- PATHS ----------------
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +29,26 @@ const groq = new Groq({
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
+// ---------------- FILE UPLOAD ----------------
+
+const uploadDir = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+app.use("/uploads", express.static(uploadDir));
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  }
+});
+
+const upload = multer({ storage });
 
 // ---------------- LOAD CHAT FILE ----------------
 function readChats() {
@@ -81,6 +102,20 @@ app.post("/chat", async (req, res) => {
   } catch (err) {
     console.error("Chat error:", err);
     res.status(500).json({ reply: "❌ AI Error" });
+  }
+});
+// Upload endpoint
+app.post("/upload", upload.single("file"), (req, res) => {
+  try {
+    res.json({
+      success: true,
+      filename: req.file.filename,
+      url: "/uploads/" + req.file.filename
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false
+    });
   }
 });
 
