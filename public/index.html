@@ -195,6 +195,8 @@ font-size:16px;
 <div id="messages"></div>
 
 <footer>
+   <button id="uploadBtn">📎</button>
+  <input type="file" id="fileInput" hidden>
 <input id="input" placeholder="Type your message...">
 <button id="send">➤</button>
 <button id="mic">🎤</button>
@@ -229,6 +231,8 @@ error.innerText="❌ Wrong Login";
 
 const messages=document.getElementById("messages");
 const input=document.getElementById("input");
+  const uploadBtn = document.getElementById("uploadBtn");
+const fileInput = document.getElementById("fileInput");
 
 function add(text,type){
 const div=document.createElement("div");
@@ -286,6 +290,46 @@ sendBtn.onclick = sendMessage;
 input.addEventListener("keydown", e => {
 if (e.key === "Enter") sendMessage();
 });
+  uploadBtn.onclick = () => {
+  fileInput.click();
+};
+
+fileInput.onchange = async () => {
+
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  add("📤 Uploading: " + file.name, "user");
+
+  try {
+
+    const res = await fetch("/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if(data.success){
+
+      add(
+        "📎 File uploaded:\n" +
+        window.location.origin + data.url,
+        "bot"
+      );
+
+    }else{
+      add("❌ Upload failed","bot");
+    }
+
+  } catch(err){
+    add("❌ Upload failed","bot");
+  }
+
+};
 
 /* =============== VOICE =============== */
 
