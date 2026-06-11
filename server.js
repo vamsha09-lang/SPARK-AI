@@ -91,8 +91,13 @@ uploadedContent
 
 ${uploadedContent}
 
-Question:
-${message}`
+Document excerpt:
+${uploadedContent.substring(0,3000)}
+
+User question:
+${message}
+
+Answer only using the document if possible.
 : message;
 
 chats[user].push({
@@ -143,7 +148,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         fs.readFileSync(file.path)
       );
 
-      uploadedContent = data.text;
+      uploadedContent = data.text.substring(0, 4000);
     }
 
     // DOCX
@@ -156,14 +161,14 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         path: file.path
       });
 
-      uploadedContent = result.value;
+     uploadedContent = result.value.substring(0, 4000);
     }
 
     // TXT
     else if (file.mimetype === "text/plain") {
 
       uploadedContent =
-        fs.readFileSync(file.path, "utf8");
+        fs.readFileSync(file.path, "utf8").substring(0,4000);
     }
 
     res.json({
