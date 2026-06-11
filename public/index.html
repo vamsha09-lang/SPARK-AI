@@ -290,16 +290,7 @@ sendBtn.onclick = sendMessage;
 input.addEventListener("keydown", e => {
 if (e.key === "Enter") sendMessage();
 });
- uploadBtn.onclick = () => {
-  fileInput.click();
-};
 
-fileInput.onchange = () => {
-  const file = fileInput.files[0];
-  if (!file) return;
-
-  add("📎 Uploaded: " + file.name, "user");
-}; 
 
 /* =============== VOICE =============== */
 
