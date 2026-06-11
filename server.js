@@ -85,20 +85,19 @@ app.post("/chat", async (req, res) => {
     const chats = readChats();
     chats[user] = chats[user] || [];
 
- const finalMessage =
-uploadedContent
-? `Document:
+const finalMessage = uploadedContent
+  ? `Document:
 
 ${uploadedContent}
 
 Document excerpt:
-${uploadedContent.substring(0,3000)}
+${uploadedContent.substring(0, 3000)}
 
 User question:
 ${message}
 
-Answer only using the document if possible.
-: message;
+Answer only using the document if possible.`
+  : message;
 
 chats[user].push({
   role: "user",
