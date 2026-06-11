@@ -10,6 +10,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
+import pdfParse from "pdf-parse";
+import mammoth from "mammoth";
+let uploadedContent = "";
 
 // ---------------- PATHS ----------------
 const __filename = fileURLToPath(import.meta.url);
@@ -82,7 +85,20 @@ app.post("/chat", async (req, res) => {
     const chats = readChats();
     chats[user] = chats[user] || [];
 
-    chats[user].push({ role: "user", content: message });
+ const finalMessage =
+uploadedContent
+? `Document:
+
+${uploadedContent}
+
+Question:
+${message}`
+: message;
+
+chats[user].push({
+  role: "user",
+  content: finalMessage
+});
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
@@ -105,18 +121,63 @@ app.post("/chat", async (req, res) => {
   }
 });
 // Upload endpoint
-app.post("/upload", upload.single("file"), (req, res) => {
+app.post("/upload", upload.single("file"), async (req, res) => {
+
   try {
+
+    uploadedContent = "";
+
+    const file = req.file;
+
+    if (!file) {
+      return res.json({ success: false });
+    }
+
+    // PDF
+    if (file.mimetype === "application/pdf") {
+
+      const data = await pdfParse(
+        fs.readFileSync(file.path)
+      );
+
+      uploadedContent = data.text;
+    }
+
+    // DOCX
+    else if (
+      file.mimetype ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+
+      const result = await mammoth.extractRawText({
+        path: file.path
+      });
+
+      uploadedContent = result.value;
+    }
+
+    // TXT
+    else if (file.mimetype === "text/plain") {
+
+      uploadedContent =
+        fs.readFileSync(file.path, "utf8");
+    }
+
     res.json({
       success: true,
-      filename: req.file.filename,
-      url: "/uploads/" + req.file.filename
+      filename: file.originalname
     });
+
   } catch (err) {
-    res.status(500).json({
+
+    console.log(err);
+
+    res.json({
       success: false
     });
+
   }
+
 });
 
 // ---------------- START ----------------
