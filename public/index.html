@@ -230,6 +230,8 @@ error.innerText="❌ Wrong Login";
 
 const messages=document.getElementById("messages");
 const input=document.getElementById("input");
+const uploadBtn = document.getElementById("uploadBtn");
+const fileInput = document.getElementById("fileInput");  
 
 function add(text,type){
 const div=document.createElement("div");
@@ -287,6 +289,16 @@ sendBtn.onclick = sendMessage;
 input.addEventListener("keydown", e => {
 if (e.key === "Enter") sendMessage();
 });
+ uploadBtn.onclick = () => {
+  fileInput.click();
+};
+
+fileInput.onchange = () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  add("📎 Uploaded: " + file.name, "user");
+}; 
 
 /* =============== VOICE =============== */
 
