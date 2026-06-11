@@ -115,10 +115,13 @@ chats[user].push({
 
     res.json({ reply });
 
-  } catch (err) {
-    console.error("Chat error:", err);
-    res.status(500).json({ reply: "❌ AI Error" });
-  }
+  }catch (err) {
+  console.error("FULL ERROR:", err);
+
+  res.status(500).json({
+    reply: "❌ AI Error: " + (err.message || "Unknown error")
+  });
+}
 });
 // Upload endpoint
 app.post("/upload", upload.single("file"), async (req, res) => {
