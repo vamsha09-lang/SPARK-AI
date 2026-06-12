@@ -473,6 +473,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("app").style.display = "flex";
 
   CURRENT_USER = user.displayName;
+    
+const res2 = await fetch("/history");
+const history = await res2.json();
+
+console.log("User history:", history);
 
   renderSidebar();
 
