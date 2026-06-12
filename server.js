@@ -24,6 +24,7 @@ const CHAT_FILE = path.join(__dirname, "chats.json");
 
 // ---------------- APP ----------------
 const app = express();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
 // ---------------- GROQ ----------------
@@ -51,7 +52,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback"
+      callbackURL: "https://spark-ai-hzaa.onrender.com/auth/google/callback"
     },
     (accessToken, refreshToken, profile, done) => {
       return done(null, profile);
