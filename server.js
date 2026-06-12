@@ -138,11 +138,11 @@ app.get("/history", (req, res) => {
     return res.status(401).json([]);
   }
 
-  const user = req.user.emails[0].value;
+  const email = req.user.emails[0].value;
 
   const chats = readChats();
 
-  res.json(chats[user] || []);
+  res.json(chats[email] || []);
 
 });
 
@@ -156,12 +156,15 @@ app.post("/chat", async (req, res) => {
       });
     }
 
-    const user = req.user.emails[0].value;
+    const email = req.user.emails[0].value;
     const { message } = req.body;
-    if (!user || !message) return res.status(400).end();
+
+    if (!message) {
+      return res.status(400).end();
+    }
 
     const chats = readChats();
-    chats[user] = chats[user] || [];
+    chats[email] = chats[email] || [];
 
 const finalMessage = uploadedContent
   ? `Document:
@@ -177,7 +180,7 @@ ${message}
 Answer only using the document if possible.`
   : message;
 
-chats[user].push({
+chats[email].push({
   role: "user",
   content: finalMessage
 });
@@ -186,13 +189,13 @@ chats[user].push({
       model: "llama-3.1-8b-instant",
       messages: [
         { role: "system", content: "You are Spark AI, expert in Math and Physics." },
-        ...chats[user]
+        ...chats[email]
       ]
     });
 
     const reply = completion.choices[0].message.content;
 
-    chats[user].push({ role: "assistant", content: reply });
+    chats[email].push({ role: "assistant", content: reply });
     writeChats(chats);
 
     res.json({ reply });
