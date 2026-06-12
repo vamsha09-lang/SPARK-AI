@@ -446,6 +446,7 @@ async function sendMessage() {
      body: JSON.stringify({
   message: text
 })
+    });       
     const d = await r.json();
     typing.remove();
     addMessageDOM(d.reply, "bot");
