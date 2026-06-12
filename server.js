@@ -140,7 +140,15 @@ app.get("/history/:user", (req, res) => {
 // Chat endpoint
 app.post("/chat", async (req, res) => {
   try {
-    const { user, message } = req.body;
+
+    if (!req.user) {
+      return res.status(401).json({
+        reply: "Please login with Google first"
+      });
+    }
+
+    const user = req.user.emails[0].value;
+    const { message } = req.body;
     if (!user || !message) return res.status(400).end();
 
     const chats = readChats();
