@@ -443,8 +443,9 @@ async function sendMessage() {
     const r = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user: CURRENT_USER, message: text })
-    });
+     body: JSON.stringify({
+  message: text
+})
     const d = await r.json();
     typing.remove();
     addMessageDOM(d.reply, "bot");
