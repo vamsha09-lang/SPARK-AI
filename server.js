@@ -132,9 +132,18 @@ app.get("/", (req, res) => {
 });
 
 // Load history for user
-app.get("/history/:user", (req, res) => {
+app.get("/history", (req, res) => {
+
+  if (!req.user) {
+    return res.status(401).json([]);
+  }
+
+  const user = req.user.emails[0].value;
+
   const chats = readChats();
-  res.json(chats[req.params.user] || []);
+
+  res.json(chats[user] || []);
+
 });
 
 // Chat endpoint
