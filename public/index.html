@@ -269,6 +269,9 @@
   <input id="user" placeholder="Username">
   <input id="pass" type="password" placeholder="Password">
   <button id="loginBtn">Login</button>
+  <button onclick="window.location='/auth/google'">
+🔵 Login with Google
+</button>
   <p id="error"></p>
 </div>
 
@@ -458,6 +461,24 @@ function tts(text) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  async function checkGoogleUser() {
+
+  const res = await fetch("/me");
+  const user = await res.json();
+
+  if (user) {
+
+    login.style.display = "none";
+    app.style.display = "flex";
+
+    CURRENT_USER = user.displayName;
+
+    load();
+  }
+
+}
+
+checkGoogleUser();
   const USER = "admin", PASS = "Pranavam21@";
 
   document.getElementById("loginBtn").onclick = () => {
