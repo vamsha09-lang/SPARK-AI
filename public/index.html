@@ -468,14 +468,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (user) {
 
-    login.style.display = "none";
-    app.style.display = "flex";
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "flex";
 
-    CURRENT_USER = user.displayName;
+  CURRENT_USER = user.displayName;
 
-    load();
+  renderSidebar();
+
+  const chats = Object.values(getChats())
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+
+  if (chats.length > 0) {
+    loadChat(chats[0].id);
+  } else {
+    newChat();
   }
-
+}
 }
 
 checkGoogleUser();
