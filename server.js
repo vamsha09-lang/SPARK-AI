@@ -6,6 +6,7 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import Groq from "groq-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -17,6 +18,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
 let uploadedContent = "";
+const uploadedImages = {};
 
 // ---------------- PATHS ----------------
 const __filename = fileURLToPath(import.meta.url);
@@ -31,6 +33,15 @@ const PORT = process.env.PORT || 3000;
 
 // ---------------- GROQ ----------------
 const groq = new Groq({ apiKey: process.env.GROQ_KEY });
+
+// ----------------GEMINI-----------------
+if (!process.env.GEMINI_API_KEY) {
+  console.error("❌ GEMINI_API_KEY missing");
+}
+
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY
+);
 
 // ---------------- MIDDLEWARE ----------------
 app.use(cors());
@@ -103,6 +114,14 @@ function getSystemPrompt() {
   return DEFAULT_PROMPT;
 }
 
+function imageToGenerativePart(filePath, mimeType) {
+  return {
+    inlineData: {
+      data: fs.readFileSync(filePath).toString("base64"),
+      mimeType
+    }
+  };
+}
 // ---------------- ROUTES ----------------
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
@@ -132,6 +151,59 @@ app.post("/chat/stream", async (req, res) => {
     const chats = readChats();
     chats[email] = chats[email] || [];
 
+  
+
+  // ----- GEMINI VISION -----
+if (uploadedImages[email]) {
+
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash"
+  });
+
+  const imageData = uploadedImages[email];
+
+  const result = await model.generateContent([
+    message,
+    imageToGenerativePart(
+      imageData.path,
+      imageData.mime
+    )
+  ]);
+
+  const visionReply = result.response.text();
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  res.write(
+    `data: ${JSON.stringify({
+      token: visionReply
+    })}\n\n`
+  );
+
+  res.write(
+    `data: ${JSON.stringify({
+      done: true
+    })}\n\n`
+  );
+  chats[email].push({
+  role: "user",
+  content: `[Image Question] ${message}`
+});
+
+chats[email].push({
+  role: "assistant",
+  content: visionReply
+});
+
+writeChats(chats);
+  
+delete uploadedImages[email];
+  
+  res.end();
+  return;
+}
     const finalMessage = uploadedContent
       ? `Document:\n\n${uploadedContent.substring(0, 3000)}\n\nUser question:\n${message}\n\nAnswer using the document if possible.`
       : message;
@@ -207,9 +279,19 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     uploadedContent = "";
     const file = req.file;
     if (!file) return res.json({ success: false });
+const isImage = file.mimetype.startsWith("image/");
 
-    const isImage = file.mimetype.startsWith("image/");
+if (req.user && isImage) {
+  // Clear any previous document content
+  uploadedContent = "";
 
+  const email = req.user.emails[0].value;
+
+  uploadedImages[email] = {
+    path: file.path,
+    mime: file.mimetype
+  };
+}
     if (file.mimetype === "application/pdf") {
       const data = await pdfParse(fs.readFileSync(file.path));
       uploadedContent = data.text.substring(0, 4000);
