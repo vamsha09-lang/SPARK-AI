@@ -1,4 +1,3 @@
-// server.js
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -34,21 +33,19 @@ const PORT = process.env.PORT || 3000;
 // ---------------- GROQ ----------------
 const groq = new Groq({ apiKey: process.env.GROQ_KEY });
 
-// ----------------GEMINI-----------------
+// ---------------- GEMINI ----------------
 if (!process.env.GEMINI_API_KEY) {
   console.error("❌ GEMINI_API_KEY missing");
 }
 
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY
-);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // ---------------- MIDDLEWARE ----------------
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || "spark_secret",
   resave: false,
   saveUninitialized: false
 }));
@@ -57,8 +54,8 @@ app.use(passport.session());
 
 // ---------------- GOOGLE AUTH ----------------
 passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  clientID: process.env.GOOGLE_CLIENT_ID || "",
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
   callbackURL: "https://spark-ai-hzaa.onrender.com/auth/google/callback"
 }, (accessToken, refreshToken, profile, done) => done(null, profile)));
 
@@ -70,9 +67,15 @@ app.get("/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => res.redirect("/")
 );
+
 app.get("/auth/logout", (req, res) => {
-  req.logout(() => res.redirect("/"));
+  if (req.logout) {
+    req.logout(() => res.redirect("/"));
+  } else {
+    res.redirect("/");
+  }
 });
+
 app.get("/me", (req, res) => res.json(req.user || null));
 
 // ---------------- FILE UPLOAD ----------------
@@ -86,11 +89,17 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ["application/pdf",
+    const allowed = [
+      "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "text/plain", "image/jpeg", "image/png", "image/gif", "image/webp"];
+      "text/plain",
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp"
+    ];
     cb(null, allowed.includes(file.mimetype));
   }
 });
@@ -98,7 +107,11 @@ const upload = multer({
 // ---------------- CHAT STORE ----------------
 function readChats() {
   if (!fs.existsSync(CHAT_FILE)) return {};
-  return JSON.parse(fs.readFileSync(CHAT_FILE, "utf8"));
+  try {
+    return JSON.parse(fs.readFileSync(CHAT_FILE, "utf8"));
+  } catch {
+    return {};
+  }
 }
 function writeChats(data) {
   fs.writeFileSync(CHAT_FILE, JSON.stringify(data, null, 2));
@@ -122,6 +135,25 @@ function imageToGenerativePart(filePath, mimeType) {
     }
   };
 }
+
+function toStoredChatMessage(m) {
+  return {
+    role: m.role,
+    content: m.text ?? m.content ?? "",
+    ts: m.ts || Date.now(),
+    ...(m.imageUrl ? { imageUrl: m.imageUrl } : {})
+  };
+}
+
+function toClientChatMessage(m) {
+  return {
+    role: m.role,
+    text: m.content ?? m.text ?? "",
+    ts: m.ts || Date.now(),
+    ...(m.imageUrl ? { imageUrl: m.imageUrl } : {})
+  };
+}
+
 // ---------------- ROUTES ----------------
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
@@ -129,7 +161,7 @@ app.get("/history", (req, res) => {
   if (!req.user) return res.status(401).json([]);
   const email = req.user.emails[0].value;
   const chats = readChats();
-  res.json(chats[email] || []);
+  res.json((chats[email] || []).map(toClientChatMessage));
 });
 
 app.get("/systemprompt", (req, res) => res.json({ prompt: getSystemPrompt() }));
@@ -151,69 +183,39 @@ app.post("/chat/stream", async (req, res) => {
     const chats = readChats();
     chats[email] = chats[email] || [];
 
-  
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
 
-  // ----- GEMINI VISION -----
-if (uploadedImages[email]) {
+    // Vision path
+    if (uploadedImages[email]) {
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const imageData = uploadedImages[email];
 
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash"
-  });
+      const result = await model.generateContent([
+        message,
+        imageToGenerativePart(imageData.path, imageData.mime)
+      ]);
 
-  const imageData = uploadedImages[email];
+      const visionReply = result.response.text();
 
-  const result = await model.generateContent([
-    message,
-    imageToGenerativePart(
-      imageData.path,
-      imageData.mime
-    )
-  ]);
+      res.write(`data: ${JSON.stringify({ token: visionReply })}\n\n`);
+      chats[email].push({ role: "user", content: `[Image Question] ${message}` });
+      chats[email].push({ role: "assistant", content: visionReply });
+      writeChats(chats);
 
-  const visionReply = result.response.text();
+      delete uploadedImages[email];
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+      return;
+    }
 
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
-  res.write(
-    `data: ${JSON.stringify({
-      token: visionReply
-    })}\n\n`
-  );
-
-  res.write(
-    `data: ${JSON.stringify({
-      done: true
-    })}\n\n`
-  );
-  chats[email].push({
-  role: "user",
-  content: `[Image Question] ${message}`
-});
-
-chats[email].push({
-  role: "assistant",
-  content: visionReply
-});
-
-writeChats(chats);
-  
-delete uploadedImages[email];
-  
-  res.end();
-  return;
-}
     const finalMessage = uploadedContent
       ? `Document:\n\n${uploadedContent.substring(0, 3000)}\n\nUser question:\n${message}\n\nAnswer using the document if possible.`
       : message;
 
     chats[email].push({ role: "user", content: finalMessage });
-
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.flushHeaders();
 
     const stream = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
@@ -239,6 +241,12 @@ delete uploadedImages[email];
     res.end();
   } catch (err) {
     console.error("Stream error:", err);
+    if (!res.headersSent) {
+      res.status(500);
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+    }
     res.write(`data: ${JSON.stringify({ error: "❌ AI Error: " + err.message })}\n\n`);
     res.end();
   }
@@ -254,15 +262,18 @@ app.post("/chat", async (req, res) => {
 
     const chats = readChats();
     chats[email] = chats[email] || [];
+
     const finalMessage = uploadedContent
       ? `Document:\n\n${uploadedContent.substring(0, 3000)}\n\nUser question:\n${message}`
       : message;
+
     chats[email].push({ role: "user", content: finalMessage });
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [{ role: "system", content: getSystemPrompt() }, ...chats[email]]
     });
+
     const reply = completion.choices[0].message.content;
     chats[email].push({ role: "assistant", content: reply });
     writeChats(chats);
@@ -279,19 +290,14 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     uploadedContent = "";
     const file = req.file;
     if (!file) return res.json({ success: false });
-const isImage = file.mimetype.startsWith("image/");
 
-if (req.user && isImage) {
-  // Clear any previous document content
-  uploadedContent = "";
+    const isImage = file.mimetype.startsWith("image/");
+    if (req.user && isImage) {
+      uploadedContent = "";
+      const email = req.user.emails[0].value;
+      uploadedImages[email] = { path: file.path, mime: file.mimetype };
+    }
 
-  const email = req.user.emails[0].value;
-
-  uploadedImages[email] = {
-    path: file.path,
-    mime: file.mimetype
-  };
-}
     if (file.mimetype === "application/pdf") {
       const data = await pdfParse(fs.readFileSync(file.path));
       uploadedContent = data.text.substring(0, 4000);
@@ -315,5 +321,4 @@ if (req.user && isImage) {
   }
 });
 
-// ---------------- START ----------------
 app.listen(PORT, () => console.log(`✅ Spark AI running on port ${PORT}`));
