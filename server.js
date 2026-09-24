@@ -216,7 +216,7 @@ delete uploadedImages[email];
     res.flushHeaders();
 
     const stream = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: "openai/gpt-oss-20b",
       messages: [
         { role: "system", content: getSystemPrompt() },
         ...chats[email]
@@ -260,7 +260,7 @@ app.post("/chat", async (req, res) => {
     chats[email].push({ role: "user", content: finalMessage });
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: "openai/gpt-oss-20b",
       messages: [{ role: "system", content: getSystemPrompt() }, ...chats[email]]
     });
     const reply = completion.choices[0].message.content;
